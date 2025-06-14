@@ -2,6 +2,7 @@ import pyautogui
 import time
 import keyboard
 import mouse
+import pickle  # Import the pickle module
 
 def click_fruit(x, y):
     """Clicks on the fruit at the specified coordinates."""
@@ -35,8 +36,9 @@ def record_actions():
             print(f"Click recorded at {x}, {y} with button {event.button}")
 
     def on_key_event(event):
-        actions.append({'type': 'key', 'key': event.name})
-        print(f"Key {event.name} pressed")
+        if event.name.lower() != 'q':  # Exclude 'q' from recorded actions
+            actions.append({'type': 'key', 'key': event.name})
+            print(f"Key {event.name} pressed")
 
     mouse.hook(on_mouse_event)
     keyboard.on_press(on_key_event)
@@ -47,6 +49,23 @@ def record_actions():
 
     print("Recording stopped.")
     return actions
+
+def save_actions(actions, filename="recorded_actions.pkl"):
+    """Saves the recorded actions to a file using pickle."""
+    with open(filename, 'wb') as f:
+        pickle.dump(actions, f)
+    print(f"Actions saved to {filename}")
+
+def load_actions(filename="recorded_actions.pkl"):
+    """Loads the recorded actions from a file using pickle."""
+    try:
+        with open(filename, 'rb') as f:
+            actions = pickle.load(f)
+        print(f"Actions loaded from {filename}")
+        return actions
+    except FileNotFoundError:
+        print(f"File {filename} not found.  Please record actions first.")
+        return None
 
 def replay_actions(actions):
     """Replays the recorded actions with a 30-second wait after the first 'E'."""
@@ -64,8 +83,8 @@ def replay_actions(actions):
             if action['key'].lower() == 'e':
                 e_count += 1
                 if e_count == 1:  # Wait only after the *first* 'E'
-                    print("Waiting 35 seconds to simulate growth/processing...")
-                    time.sleep(35)
+                    print("Waiting 30 seconds to simulate growth/processing...")
+                    time.sleep(33)
 
         time.sleep(0.1)  # Slight delay between all actions
     print("Replay finished.")
@@ -80,11 +99,18 @@ def main():
         print("Game window not found. Make sure the title is correct.")
         return
 
-    actions = record_actions()  # Record actions only once
+    # Try to load actions from file
+    actions = load_actions()
 
-    while True:  # Loop indefinitely
-        replay_actions(actions)
-        print("Replay finished. Starting replay again...")
+    # If no actions are loaded, record new actions
+    if actions is None:
+        actions = record_actions()
+        save_actions(actions)  # Save actions after recording
+
+    if actions: # Only replay if actions were loaded or recorded
+        while True:  # Loop indefinitely
+            replay_actions(actions)
+            print("Replay finished. Starting replay again...")
 
 if __name__ == "__main__":
     main()
