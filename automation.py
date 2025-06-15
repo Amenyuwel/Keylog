@@ -84,7 +84,7 @@ def replay_actions(actions):
                 e_count += 1
                 if e_count == 1:  # Wait only after the *first* 'E'
                     print("Waiting 30 seconds to simulate growth/processing...")
-                    time.sleep(33)
+                    time.sleep(31)
 
         time.sleep(0.1)  # Slight delay between all actions
     print("Replay finished.")
@@ -108,9 +108,22 @@ def main():
         save_actions(actions)  # Save actions after recording
 
     if actions: # Only replay if actions were loaded or recorded
-        while True:  # Loop indefinitely
+        stop_replay = False  # Flag to stop the replay loop
+
+        def on_space_press(event):
+            nonlocal stop_replay
+            if event.name == 'space':
+                print("Space key pressed. Exiting replay loop.")
+                stop_replay = True
+
+        keyboard.on_press(on_space_press)  # Set the callback for any key press
+
+        while not stop_replay:  # Loop until stop_replay is True
             replay_actions(actions)
             print("Replay finished. Starting replay again...")
+
+        keyboard.unhook_all()  # Unhook all keys
+        print("Exiting main loop.")
 
 if __name__ == "__main__":
     main()
